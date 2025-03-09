@@ -1,25 +1,27 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
+from django.shortcuts import render
+from django.http import HttpResponse
+from django.views import View
 import pandas as pd
-from .serializers import UserModelSerializer
 from .models import UserModel
+from .serializers import UserModelSerializer
 
-class CSVUploadView(APIView):
+class CSVUploadView(View):
+    def get(self, request):
+        return render(request, 'csv_handler/csv_upload.html')  # Render the template when GET request
 
     def post(self, request):
         csv_file = request.FILES.get('file')
 
         if not csv_file:
-            return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return render(request, 'csv_handler/csv_upload.html', {'error': 'No file provided.'})
 
         if not csv_file.name.endswith('.csv'):
-            return Response({"error": "File must have a .csv extension."}, status=status.HTTP_400_BAD_REQUEST)
+            return render(request, 'csv_handler/csv_upload.html', {'error': 'File must have a .csv extension.'})
 
         try:
             df = pd.read_csv(csv_file)
         except Exception as e:
-            return Response({"error": f"Error reading CSV file: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            return render(request, 'csv_handler/csv_upload.html', {'error': f'Error reading CSV file: {str(e)}'})
 
         saved_count = 0
         rejected_records = []
@@ -47,4 +49,4 @@ class CSVUploadView(APIView):
             'rejected_records': rejected_records,
         }
 
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        return render(request, 'csv_handler/csv_upload.html', {'summary': response_data})
